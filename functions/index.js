@@ -220,7 +220,8 @@ function numberWithCommas(x) {
 const extractCommands = (rawStr, recipientId) => {
   let commands = rawStr.trim();
   let isCommand = true
-  if (recipientId === "28:b8b7c4e6-b41b-4159-ada2-7bd0ecda6c36") {
+  const botId = process.env.LUNCHBOT_ID
+  if (recipientId === botId) {
     // Mention 제거
     if (commands.startsWith("<at>")) {
       commands = commands.split('>')[2].trim()
@@ -249,8 +250,10 @@ const extractCommands = (rawStr, recipientId) => {
 
 const getAuth = async () => {
   const obj = new URLSearchParams();
-  obj.append('client_id', 'b8b7c4e6-b41b-4159-ada2-7bd0ecda6c36');
-  obj.append('client_secret', '6Qe8Q~hY.S5x3RIoyZpHQydpkZKtikco_F2knbsr');
+  const TEAMS_CLIENT_ID = process.env.TEAMS_CLIENT_ID
+  const TEAMS_CLIENT_SECRET = process.env.TEAMS_CLIENT_SECRET
+  obj.append('client_id', TEAMS_CLIENT_ID);
+  obj.append('client_secret', TEAMS_CLIENT_SECRET);
   obj.append('grant_type', 'client_credentials');
   obj.append('scope', 'https://api.botframework.com/.default');
   const authRes = await axios({
@@ -336,8 +339,8 @@ const callTranslate = async (src, mode) => {
     responseType: 'json',
     headers: {
       "Content-Type": "application/x-www-form-urlencoded",
-      "X-Naver-Client-Id": "0Ei9c5O7korykmJUa4_B",
-      "X-Naver-Client-Secret": "wpRd5BChYw"
+      "X-Naver-Client-Id": process.env.NAVER_CLIENT_ID,
+      "X-Naver-Client-Secret": process.env.NAVER_CLIENT_SECRET
     }
   })
   const res = translateRes.data.message?.result?.translatedText
