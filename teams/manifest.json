@@ -1,0 +1,87 @@
+{
+    "$schema": "https://developer.microsoft.com/json-schemas/teams/v1.16/MicrosoftTeams.schema.json",
+    "manifestVersion": "1.16",
+    "version": "1.0.1",
+    "id": "b8b7c4e6-b41b-4159-ada2-7bd0ecda6c36",
+    "developer": {
+        "name": "Niel Cho",
+        "websiteUrl": "https://www.microsoft.com", 
+        "privacyUrl": "https://www.microsoft.com/privacy", 
+        "termsOfUseUrl": "https://www.microsoft.com/termsofuse"
+    },
+    "name": {
+        "short": "lunchbot",
+        "full": "lunchbot"
+    },
+    "description": {
+        "short": "점심봇입니다.",
+        "full": "점심봇. help: just mention me"
+    },
+    "icons": {
+        "outline": "Frame2x32.png",
+        "color": "Frame2x192.png"
+    },
+    "accentColor": "#60A18E",
+    "bots": [
+        {
+            "botId": "b8b7c4e6-b41b-4159-ada2-7bd0ecda6c36",
+            "scopes": [
+                "team",
+                "personal",
+                "groupChat"
+            ],
+            "needsChannelSelector": false,
+            "isNotificationOnly": false,
+            "supportsFiles": true,
+            "supportsCalling": false,
+            "supportsVideo": true,
+            "commandLists": [
+            ]
+        }
+    ],
+    "permissions": [
+        "identity",
+        "messageTeamMembers"
+    ],
+    "devicePermissions": [
+        "geolocation",
+        "media",
+        "notifications",
+        "midi",
+        "openExternal"
+    ],
+    "authorization": {
+        "permissions": {
+            "resourceSpecific": [
+                {
+                    "type": "Application",
+                    "name": "ChannelSettings.Read.Group"
+                },
+                {
+                    "type": "Delegated",
+                    "name": "ChannelMeetingParticipant.Read.Group"
+                }
+            ]
+        }
+    },
+    "showLoadingIndicator": false,
+    "isFullScreen": false,
+    "defaultBlockUntilAdminAction": true,
+    "defaultInstallScope": "groupChat",
+    "defaultGroupCapability": {
+        "meetings": "bot",
+        "team": "bot",
+        "groupchat": "bot"
+    },
+    "configurableProperties": [
+        "name",
+        "shortDescription",
+        "longDescription",
+        "smallImageUrl",
+        "largeImageUrl",
+        "accentColor",
+        "developerUrl",
+        "privacyUrl",
+        "termsOfUseUrl"
+    ]
+}
