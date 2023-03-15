@@ -250,10 +250,8 @@ const extractCommands = (rawStr, recipientId) => {
 
 const getAuth = async () => {
   const obj = new URLSearchParams();
-  const TEAMS_CLIENT_ID = process.env.TEAMS_CLIENT_ID
-  const TEAMS_CLIENT_SECRET = process.env.TEAMS_CLIENT_SECRET
-  obj.append('client_id', TEAMS_CLIENT_ID);
-  obj.append('client_secret', TEAMS_CLIENT_SECRET);
+  obj.append('client_id', process.env.TEAMS_CLIENT_ID);
+  obj.append('client_secret', process.env.TEAMS_CLIENT_SECRET);
   obj.append('grant_type', 'client_credentials');
   obj.append('scope', 'https://api.botframework.com/.default');
   const authRes = await axios({
@@ -375,7 +373,7 @@ const getCurrency = async (targetCurrency) => {
   const targetCurrencyCode = CURRENCY_TABLE.get(targetCurrency)
   if (!targetCurrencyCode) return -1
   const res = await axios({
-    url: 'https://finance.naver.com/marketindex/exchangeDetail.nhn',
+    url: process.env.NAVER_CURRENCY_CRAWL_SITE,
     method: 'GET',
     params: {
       marketindexCd:  `FX_${targetCurrencyCode}KRW`
@@ -482,6 +480,31 @@ const getCoin = async (targetCoin) => {
   })
   const coinValue = res.data[0].trade_price
   return coinValue
+}
+
+const callGPT = async (message) => {
+  const res = await axios({
+    method: 'POST',
+    url: 'https://api.openai.com/v1/chat/completions',
+    headers: {
+      Authorization: `Bearer ${process.env.CHATGPT_API_KEY}`,
+      'Content-Type': "application/json"
+    },
+    responseType: 'json',
+    data: {
+      model: "gpt-3.5-turbo",
+      messages: [
+        {
+          role: "user",
+          content: message
+        }
+      ]
+    }
+  })
+  const resMessageChoices = res.data.choices
+  functions.logger.debug("GPT!", { req: message, choices: resMessageChoices });
+  const targetChoice = resMessageChoices[Math.floor(Math.random() * resMessageChoices.length)]
+  return targetChoice.message.content.replaceAll("\n", "<br/>")
 }
 
 exports.helloWorld = functions.https.onRequest(async (request, response) => {
@@ -684,8 +707,10 @@ exports.helloWorld = functions.https.onRequest(async (request, response) => {
           }
           
         } else {
-          functions.logger.info("커맨드요청", { arguments })
-          respondText = "아직 그런 말은 알아들을 수 없어요."
+          // Chat GPT 3.5 Call
+          respondText = await callGPT(commands)
+          //functions.logger.info("커맨드요청", { arguments })
+          //respondText = "아직 그런 말은 알아들을 수 없어요."
         }
         
         break;
