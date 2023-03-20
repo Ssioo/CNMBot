@@ -156,7 +156,7 @@ const COMMAND_TYPES = new Map(Object.entries({
   "점심": [1, 2, 3, 4, 5, 6, 7],
   "번역": [10],
   "사용법": [8],
-  "기타": [9, 11, 12, 13]
+  "기타": [9, 11, 12, 13, 14]
 }))
 
 
@@ -187,6 +187,7 @@ const COMMAND_LIST = new Map(Object.entries({
   "환율": 11,
   "코인": 12,
   "주식": 13,
+  "짤": 14,
 }))
 
 const COMMAND_LIST_EN = new Map(Object.entries({
@@ -210,6 +211,7 @@ const COMMAND_LIST_EN = new Map(Object.entries({
   "currency": 11,
   "coin": 12,
   "stock": 13,
+  "pic": 14
 }))
 
 function numberWithCommas(x) {
@@ -498,13 +500,34 @@ const callGPT = async (message) => {
           role: "user",
           content: message
         }
-      ]
+      ],
+      temperature: 0.8,
+      //max_tokens: 100,
     }
   })
   const resMessageChoices = res.data.choices
   functions.logger.debug("GPT!", { req: message, choices: resMessageChoices });
   const targetChoice = resMessageChoices[Math.floor(Math.random() * resMessageChoices.length)]
   return targetChoice.message.content.replaceAll("\n", "<br/>")
+}
+
+const callGPTImageGenerate = async (prompt) => {
+  const res = await axios({
+    method: 'POST',
+    url: 'https://api.openai.com/v1/images/generations',
+    headers: {
+      Authorization: `Bearer ${process.env.CHATGPT_API_KEY}`,
+      'Content-Type': "application/json"
+    },
+    responseType: 'json',
+    data: {
+      prompt: prompt,
+      size: "512x512",
+      response_format: 'b64_json'
+    }
+  })
+  functions.logger.debug("GPT!", { req: prompt, res: res });
+  return res.data.data[0].url
 }
 
 exports.helloWorld = functions.https.onRequest(async (request, response) => {
@@ -528,6 +551,7 @@ exports.helloWorld = functions.https.onRequest(async (request, response) => {
     const arguments = commands.split(' ')
     const command_key = COMMAND_LIST.get(arguments[0]) || COMMAND_LIST_EN.get(arguments[0])
     let respondText = ''
+    const attachments = []
     switch (command_key) {
       case 1:
         // 추천 로직
@@ -624,7 +648,7 @@ exports.helloWorld = functions.https.onRequest(async (request, response) => {
         break;
       case 10:
         // 번역 로직
-        respondText = await callTranslate(arguments.slice(1).join(' ').slice(0, 1000), arguments[0]) // max 1000 단어
+        respondText = await callTranslate(arguments.slice(1).join(' ').slice(0, 5000), arguments[0]) // max 1000 단어
         break;
       case 11:
         //환율 로직
@@ -682,6 +706,19 @@ exports.helloWorld = functions.https.onRequest(async (request, response) => {
           respondText = "사용법: 주식 <코드명> or <주식명>"
         }
         break;
+      case 14:
+        if (arguments.length >= 2) {
+          const prompt = arguments.slice(1).join(' ')
+          const imgUrl = await callGPTImageGenerate(prompt)
+          attachments.push({
+            contentType: 'image/png',
+            contentUrl: imgUrl,
+            name: `${prompt}.png`
+          })
+        } else {
+          respondText = "사용법: 짤 <설명문>"
+        }
+        break
       default:
         // 기타 로직
         const loveSentences = arguments.filter((a) => a.indexOf("좋아") >= 0)
@@ -717,7 +754,7 @@ exports.helloWorld = functions.https.onRequest(async (request, response) => {
     }
 
     // 답장
-    if (respondText) {
+    if (respondText || attachments.length > 0) {
       const token = await getAuth();
       const actionRes = await axios({
         url: `${serviceUrl}v3/conversations/${conversationId}/activities`,
@@ -725,7 +762,8 @@ exports.helloWorld = functions.https.onRequest(async (request, response) => {
         responseType: 'json',
         data: {
           type: "message",
-          text: respondText
+          text: respondText,
+          attachments
         },
         headers: {
           "Content-Type": "application/json",
